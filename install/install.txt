@@ -1,0 +1,36 @@
+# Requires: CUDA 12.2 and Anaconda
+
+# 1. Clone the repository
+git clone https://github.com/hesurmann/morl_preference_driving.git
+cd morl_preference_driving
+
+# 2. Create the conda environment
+conda env create -f environment.yml
+conda activate my_env
+
+# 3. Setup CARLA simulator
+mkdir -p ~/carlaSim
+cd ~/carlaSim
+wget https://carla-releases.s3.us-east-005.backblazeb2.com/Linux/CARLA_0.9.15.tar.gz
+tar -xvzf CARLA_0.9.15.tar.gz
+
+# 4. Update PATH (replace XXX with your username)
+echo 'export PATH="$HOME/carlaSim:$PATH"' >> ~/.bashrc
+echo 'export ALSA_DEFAULT_PCM="dummy"' >> ~/.bashrc
+source ~/.bashrc
+
+# 5. Test CARLA installation
+cd ~/carlaSim
+./CarlaUE4.sh
+
+# Optional: Install helpers for user directories (needed for some CARLA tools)
+sudo apt-get install xdg-user-dirs
+
+# Optional: Login to Weights & Biases for experiment tracking
+wandb login <your-api-key>
+
+# Optional: Download additional CARLA maps
+# Put them in ~/carlaSim/Import and run:
+# cd ~/carlaSim
+# ./ImportAssets.sh
+
