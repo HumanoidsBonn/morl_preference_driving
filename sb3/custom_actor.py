@@ -79,6 +79,7 @@ class CustomActor(BasePolicy):
 
 	def _predict(self, observation: th.Tensor,  get_hidden_activations=False, deterministic: bool = False) -> th.Tensor:
 		if get_hidden_activations:
+			# Not fully supported; must implement a catch for the tuple return value!
 			return self(observation, get_hidden_activations=True)
 		else:
 			return self(observation)

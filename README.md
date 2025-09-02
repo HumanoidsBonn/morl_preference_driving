@@ -1,8 +1,6 @@
 # MORL Preference Driving
 Code repository for **"Multi-Objective Reinforcement Learning for Adaptable Personalized Autonomous Driving"** – Surmann et al., ECMR 2025
 
-The full code release is currently in progress.
-
 **Multi-Objective Reinforcement Learning for Adaptable Personalized Autonomous Driving**  
 by **Hendrik Surmann**  
 Supervised by **Jorge de Heuvel** and **Prof. Dr. Maren Bennewitz**  
@@ -22,7 +20,7 @@ Our focus is on training a single policy network capable of realizing multiple d
 The model is evaluated in diverse urban driving scenarios to assess its ability to align driving behavior with user preferences.
 Advanced traffic rules are only partially considered, as the primary objective is preference-adaptive driving behavior rather than raw autonomous driving performance.
 While the implementation is based on the SB3 TD3 framework, we extended it to the PD-MORL algorithm (an integration of preferences into TD3 with multiple Q-values).
-We further adapted PD-MORL to include a non-preference dimension — see the training function for details.
+We further adapted PD-MORL to include a non-preference dimension. See the training function for details.
 
 ## 🚀 Installation
 
@@ -44,19 +42,17 @@ conda env create -f environment.yml
 conda activate my_env
 ```
 WandB might need and api-key for experiment tracking:
-
-wandb login <your-api-key>
+and wandb login <your-api-key>
 
 ## 📂 Project Structure
 
 - **`install/`** → Contains installation instructions.
 - **`sb3/`** → The main implementation of the extended TD3 MORL algorithm.
 - **`run/`** → Stores trained networks/agents.
-- **`scenarios/`** → Includes videos/images of the implemented driving scenarios.
+- **`scenarios/`** → Images/Videos of the implemented driving scenarios.
 - **`sb3/logs/`** → Contains logging files and images and plots of the experiment results.
 
-The training progress and results are saved in:
-- **Saved models:** `run/<experiment_name>_bestPref.zip/`
+The training progress and results are saved in: `run/<experiment_name>_bestPref.zip/`
 
 ## 🎮 Running Experiments
 
@@ -78,15 +74,14 @@ Example:
 ```bash
 python td3_main.py --run=Agent --client_port=2000 --tm_port=8000
 ```
-Resulting models are in `run/<experiment_name>_bestPref.zip/`
 
 ### 🔧 Configurations
 Modify the **config file** to adjust key settings like:
 
-- **Enable visualization**: `SPECATE=True`
-- **Train/Evaluate model**: `evaluate=True`
-- **Show policy**: `showPolicy=True`
-- **Traing Phase**:`key_steps=int(1e6)`
+- **Enable visualization**: `SPECATE=False`
+- **Train/Evaluate model**: `evaluate=False`
+- **Show policy**: `showPolicy=False`
+- **Traing Phase**:`key_steps= int(1e6) # or 0`
 
 ## 📝 Citation
 
@@ -100,14 +95,12 @@ Modify the **config file** to adjust key settings like:
 }
 ```
 
-### 🎥 Supplemental Paper Video
-
-[Watch on YouTube](https://www.youtube.com/watch?v=2brpyC_edHw&ab_channel=HumanoidsBonn)
-
 ## 🔗 References
 
 - **Stable Baselines3**: [stable-baselines3.readthedocs.io](https://stable-baselines3.readthedocs.io/)
 - **PD-MORL Algorithm**: [GitHub Repository](https://github.com/tbasaklar/PDMORL-Preference-Driven-Multi-Objective-Reinforcement-Learning-Algorithm)
+- [Supplemental Paper Video on YouTube](https://www.youtube.com/watch?v=2brpyC_edHw&ab_channel=HumanoidsBonn)
+
 
 ## 🔧 Support
 
