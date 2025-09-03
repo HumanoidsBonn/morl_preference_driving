@@ -10,7 +10,7 @@ import imageio
 import queue
 
 class CarlaEnv(gym.Env):
-	# gymnasium environment
+	# Gymnasium environment
 	def __init__(self, client, config):
 		# Initialize the CARLA environment
 		super(CarlaEnv, self).__init__()
@@ -105,9 +105,7 @@ class CarlaEnv(gym.Env):
 		self.spawn_points = self.map.get_spawn_points()
 		self.vehicle_bp_ego = self.bp_lib.find('vehicle.mercedes.coupe_2020')
 		self.vehicle_bp_ego.set_attribute('role_name', 'hero')
-		self.transform = None  # Initialisierung der Transformation für den Spectator
-		self.last_vehicle_location = None  # Initialisierung der Location für den Spectator
-		self.list_spec_pos = []
+		self.transform = None 
 
 		self.collision_hist = []
 		self.sensor_list = []
@@ -223,7 +221,6 @@ class CarlaEnv(gym.Env):
 		self.spawn_points = self.map.get_spawn_points()
 		self.reset_spawn_points()
 		self.config.load_new_world = False
-		# print("Done")
 
 	def reset(self, seed=None, options=None):
 		info = {}  # Add useful information if needed
@@ -235,10 +232,10 @@ class CarlaEnv(gym.Env):
 			# Reset the spawn points
 			self.reset_spawn_points()
 
-			# Alle lebenden Akteure abrufen
+			# Get all living actors
 			all_actors = self.world.get_actors()
 
-			# Create the vehicle and traffic
+			# Create the vehicle and traffic in some randomly designed urban scenarios
 			if self.config.scenario:
 				scenarios = [
 				{
@@ -332,10 +329,11 @@ class CarlaEnv(gym.Env):
 
 				self.create_traffic()
 
+			# create the route
 			self.route, successful_created_route = CarlaEnvUtils.create_route(self.world, self.spawn_point, self.config, self.map)
 
 		# Configure the camera and collision sensor
-		# With more than multiple cameras, the simulator crashes at training start if the CPU is overloaded
+		# With more too many cameras, the simulator may crash in training, as the CPU is overloaded
 		
 		# self.configure_camera()  # RGB
 		self.configure_SegRGB()  # Seg-RGB
@@ -355,7 +353,7 @@ class CarlaEnv(gym.Env):
 					
 		# Start the NPCs
 		for npcs in self.world.get_actors().filter('*vehicle.*'):
-			self.tm.ignore_lights_percentage(npcs, 90)  # Ignore red lights
+			self.tm.ignore_lights_percentage(npcs, 98)  # Ignore red lights
 			if npcs.id != self.vehicle.id:
 				npcs.set_autopilot(True, self.config.tm_port)
 				
@@ -364,9 +362,9 @@ class CarlaEnv(gym.Env):
 		
 		self.prev_steering = 0.0
 		self.prev_throttle = 0.0
-		self.current_steering_angle = 0.0  # Aktueller Lenkwinkel in Carla-Einheiten (-1 bis 1)
-		self.steering = 0.0  # Aktion des Agenten von -1 bis 1
-		self.throttle = 0.125  # Aktion des Agenten von 0 bis 1
+		self.current_steering_angle = 0.0 
+		self.steering = 0.0  
+		self.throttle = 0.125  
 
 		self.prev_velo = 0.0
 		self.prev_yaw = 0.0
@@ -396,7 +394,6 @@ class CarlaEnv(gym.Env):
 		self.reduced = False
 		self.lane_invasion = False
 
-		# Create a new axis at the end of self.front_camera to make it 4D
 		self.get_cams()
 		self.current_index, self.next_waypoint = CarlaEnvUtils.update_position_in_route(self.vehicle, self.route, self.current_index, self.config)
 		self.prev_index = self.current_index
@@ -405,6 +402,7 @@ class CarlaEnv(gym.Env):
 		else:
 			self.vehicle.set_autopilot(False, self.config.tm_port)
 		
+		# Create a new axis at the end of self.front_camera to make it add time 
 		expanded_camera = np.expand_dims(self.front_camera, axis=1)  # In the time dimension
 
 		# Repeat the image along the new axis as needed
@@ -429,45 +427,42 @@ class CarlaEnv(gym.Env):
 	def destroy_all_actors(self):
 		self.destroy_actors()
 
-		# Alle noch lebenden Akteure in der Welt abrufen
 		all_actors = self.world.get_actors()
 		batch_destory = []
 
-		# Durch alle Akteure iterieren und sie zerstören
 		for actor in all_actors:
 			if actor is not None and actor.is_alive :
 				batch_destory.append(actor)
 
 		response = self.client.apply_batch_sync([carla.command.DestroyActor(x) for x in batch_destory])
 		
-		# Sicherstellen, dass der Simulator den Zustand nach dem Zerstören aktualisiert
 		self.world.tick()
 
 	def destroy_actors(self):
 		batch_destory = []
 		for sensor in self.sensor_list:
 			if sensor is not None and sensor.is_alive:
-				sensor.stop()  # Stoppt den Sensor-Listener
+				sensor.stop()  
 				batch_destory.append(sensor)
 			elif sensor is not None:
 				batch_destory.append(sensor)
 
 		for actor in self.actor_list:
-				if actor is not None:
-					if actor.is_alive:
-						batch_destory.append(actor)
+			if actor is not None:
+				if actor.is_alive:
+					batch_destory.append(actor)
 
-		# Sicherstellen, dass Sensoren gestoppt werden
+		# Ensure that all sensors are properly stopped
 		self.world.tick()
 
-		# Verwende Batch API, um alle Akteure und Sensoren in einem Schritt zu zerstören
+		# Use the Batch API to destroy all actors and sensors in one step
 		response = self.client.apply_batch_sync([carla.command.DestroyActor(x) for x in batch_destory])
 		# print("Response: ", response)
 
-		# Sicherstellen, dass der Simulator den Zustand nach dem Zerstören aktualisiert
+		# Ensure that the simulator updates the state after destruction
 		self.world.tick()
 
-		# Optionale Bereinigung von Listen, falls notwendig
+		# Optional cleanup of lists if necessary
 		self.lane_invasion_hist = []
 		self.collision_hist = []
 		self.traffic_list = []
@@ -487,18 +482,21 @@ class CarlaEnv(gym.Env):
 	
 	def create_vehicle(self, spawnpoint):
 		self.vehicle = None
+		# Spawnpoint problems while waiting for simulator
 		while (not self.available_spawn_points) or self.available_spawn_points == []:
 			time.sleep(2)  
 			self.destroy_actors()
 			self.reset_spawn_points()
 			print("Error spawn Point list")
+
+		# Retry, if fails
 		while self.vehicle is None:
 			if self.available_spawn_points:
-
 				# used only when evaluating interpolator
 				if self.config.eval_spawnpoint > 0:
 					self.spawn_point = self.available_spawn_points[self.config.eval_spawnpoint % len(self.available_spawn_points)]
 					
+				# Allows for visualisation to choose a spawnpoint	
 				elif (self.config.evaluate and not self.config.showPolicy) or self.config.scenario:
 					self.spawn_point = self.available_spawn_points[spawnpoint%len(self.available_spawn_points)] 
 				else:
@@ -517,49 +515,49 @@ class CarlaEnv(gym.Env):
 		
 	def create_traffic(self):
 		number_of_vehicles = self.config.NUM_TRAFFIC_VEHICLES
-		available_spawn_points = self.filter_spawn_points()  # Verwende gefilterte Spawn-Punkte
+		available_spawn_points = self.filter_spawn_points()  # Use filtered spawn points
 		
-		# Liste für die Batch-Befehle zum Spawnen von Fahrzeugen
+		# Collect batch commands for spawning vehicles
 		batch = []
 
-		# Fahrzeug-Blueprints und Spawn-Punkte für den Batch sammeln
+		# Collect vehicle blueprints and spawn points for the batch
 		for x in range(number_of_vehicles):
 			if available_spawn_points:
 				self.rdm_spawn = random.choice(available_spawn_points)
 				if not self.config.scenario:
 					available_spawn_points.remove(self.rdm_spawn)
 				
-				# Wähle ein zufälliges Fahrzeug aus der Blueprint-Liste
+				# Select a random vehicle from the blueprint library
 				self.vehicle_bp = random.choice(self.bp_lib.filter(random.choice(self.car_liste)))
 				
-				# Füge das Spawn-Kommando für das Fahrzeug zur Batch-Liste hinzu
+				# Add the vehicle spawn command to the batch
 				batch.append(carla.command.SpawnActor(self.vehicle_bp, self.rdm_spawn))
 
-		# Fahrzeuge im Batch spawnen
-		responses = self.client.apply_batch_sync(batch, True)  # 'True' sorgt für synchrones Spawnen
+		# Spawn vehicles using the batch API
+		responses = self.client.apply_batch_sync(batch, True)  # 'True' ensures synchronous spawning
 
-		# Liste für die erfolgreich gespawnten NPC-Fahrzeuge
+		# Keep track of successfully spawned NPC vehicles
 		npc_vehicles = []
 
-		# Verarbeite die Antworten des Batch-Spawns
+		# Process the responses of the batch spawn
 		for response in responses:
 			if not response.error:
-				npc = self.world.get_actor(response.actor_id)  # Hol das Fahrzeug mit der zurückgegebenen ID
-				npc_vehicles.append(npc)  # Füge das Fahrzeug der Liste hinzu
+				npc = self.world.get_actor(response.actor_id)  # Get the vehicle by its returned ID
+				npc_vehicles.append(npc)  # Add the vehicle to the NPC list
 				self.tm.auto_lane_change(npc, True)
 				self.tm.set_global_distance_to_leading_vehicle(2.5)
-				self.actor_list.append(npc)  # Füge das Fahrzeug zur Actor-Liste hinzu
-				self.traffic_list.append(npc)  # Füge das Fahrzeug zur Verkehrsliste hinzu
+				self.actor_list.append(npc)  # Track vehicle in the actor list
+				self.traffic_list.append(npc)  # Track vehicle in the traffic list
 
-		# Geschwindigkeitsanpassung
+		# Adjust traffic speed distribution
 		rdm_speed = np.random.normal(self.config.target_speed_perc - 0.05, 0.2)
 		npc_speed_perc = np.clip(rdm_speed, self.config.target_speed_perc - 0.2, self.config.target_speed_perc + 0.1)
 		
 		if self.config.evaluate:
 			npc_speed_perc = self.config.target_speed_perc - 0.05
 		
-		self.tm.global_percentage_speed_difference((1 - npc_speed_perc) * 100)  # Geschwindigkeit anpassen
-		
+		self.tm.global_percentage_speed_difference((1 - npc_speed_perc) * 100)  # Apply speed adjustment
+	
 	def create_traffic_scenario(self,spawnpoints, stop=False):
 		available_spawn_points = self.available_spawn_points # Use filtered spawn points
 		blueprint = self.bp_lib.find('vehicle.ford.mustang') # set fix blueprint here for easier visualization
@@ -580,8 +578,9 @@ class CarlaEnv(gym.Env):
 			self.tm.global_percentage_speed_difference(90) #stehen
 
 	def get_image_from_queue(self):
-		# Überprüfen, ob Bilder in der Queue vorhanden sind, bevor du sie verarbeitest
-		# Nimm das nächste Bild aus der Queue und Verarbeite das Bild und speichere es in self.seg_rgb_camera
+		# Check if images are available in the queue before processing
+		# Take the next image from the queue, process it, and store the result in self.seg_rgb_camera
+
 		if not self.seg_rgb_camera_queue.empty():
 			self.process_seg_rgb(self.seg_rgb_camera_queue.get())
 
@@ -873,45 +872,50 @@ class CarlaEnv(gym.Env):
 	def get_observation(self):
 		self.get_cams()
 
-		# Verschiebe alle vorhandenen Beobachtungen eine Position nach hinten in der time dimension, 
-		# nur notwendig wenn mehre timeslots verwenden werden, aktuell t = 1
+		# Shift all existing observations one position backward in the time dimension.  
+		# Only needed if multiple time slots are used (currently t = 1).
+		# self.camera_observation[:, 1:, :, :] = self.camera_observation[:, :-1, :, :]
 
-		# Shift all existing observations one position backward in the time dimension
-		# self.camera_observation[:,1:,:,:] = self.camera_observation[:,:-1,:,:]
-
-		# kein time shift notwendig, einfach daten schreiben
+		# No time shift required → directly overwrite with the latest frame
 		self.camera_observation[:, 0, :, :] = self.front_camera
 
+		# Collect low-level vehicle measurements (speed, acceleration, etc.)
 		self.measurements = CarlaEnvUtils.get_vehicle_measurements(self.vehicle)
 
+		# Sample or update preference weights for this step
 		pref_weights = self.get_pref_weights_step()
 		
-		# When you want to assume, that traffic lights information is provided
-		# tf_light = self.get_traffic_light() #todo this function
+		# Example if you want to include traffic light information in the observation
+		# tf_light = self.get_traffic_light()  # TODO: implement this function
 		# signs = np.array([tf_light, speed_limit], dtype=np.float32)
 
+		# Retrieve the current speed limit from the environment
 		speed_limit = CarlaEnvUtils.get_speed_limit_ms(self.vehicle)
 		signs = np.array([speed_limit], dtype=np.float32)
 
+		# If respawn-on-waypoint is enabled, update the current position in the route
 		if self.respawnen_wp:
-			self.current_index, self.next_waypoint = CarlaEnvUtils.update_position_in_route(self.vehicle, self.route, self.current_index, self.config)
+			self.current_index, self.next_waypoint = CarlaEnvUtils.update_position_in_route(
+				self.vehicle, self.route, self.current_index, self.config
+			)
 			self.prev_index = self.current_index
 
-		# Angle, Distance only at intersections
-		angle = 0.0
-		distance = 0.0
-
-		angle = np.round(CarlaEnvUtils.get_relative_direction_orientation(self.vehicle.get_transform(), self.next_waypoint),5)
+		# Compute angle and distance to the next waypoint
+		angle = np.round(
+			CarlaEnvUtils.get_relative_direction_orientation(
+				self.vehicle.get_transform(), self.next_waypoint
+			), 5
+		)
 		distance = self.vehicle.get_transform().location.distance(self.next_waypoint.transform.location)
-		next_wp = np.round(np.array([angle, distance]).astype(np.float32),4)
-	
-		# print("angle", np.round(np.rad2deg(angle),2), f"distance: {distance:.2f}")
-		# next_wp = np.round(np.array([angle]).astype(np.float32),4)
+		next_wp = np.round(np.array([angle, distance]).astype(np.float32), 4)
 
-		# Get the closest car and its distance, for reward and safety computation
+		# Debugging example: angle and distance
+		# print("angle", np.round(np.rad2deg(angle),2), f"distance: {distance:.2f}")
+
+		# Get the closest car and its distance (used for reward and safety computation)
 		self.distances, self.blocked, self.reduced = CarlaEnvUtils.closest_car(self.vehicle, self.traffic_list)
 
-		# Write the observation into a dictionary
+		# Assemble the full observation dictionary
 		observation = {
 			'camera': self.camera_observation,
 			'measurements': self.measurements,
@@ -982,7 +986,7 @@ class CarlaEnv(gym.Env):
 				info["brake"] = 0
 				self.throttle = scaled_throttle
 
-				# Slightly smooth the actions?
+				# You may want to slightly smooth the actions
 
 		return info
 	
@@ -1021,7 +1025,7 @@ class CarlaEnv(gym.Env):
 
 			self.spectator.set_transform(self.transform)
 			
-		# schreibe logging daten wenn evaluiert wird in die env info
+		# Write logging data if evaluate
 		if self.config.evaluate:
 			location = self.vehicle.get_transform().location
 			speed_limit = CarlaEnvUtils.get_speed_limit_ms(self.vehicle)
@@ -1056,11 +1060,11 @@ class CarlaEnv(gym.Env):
 		self.measurements = CarlaEnvUtils.get_vehicle_measurements(self.vehicle)
 		self.episode_ticks += 1
 
-		# fail safe
+		# Fail safe
 		if self.vehicle is None:
 			done = True
 		
-		# calculate the rewards,
+		# Calculate the rewards
 		else:
 			# Lateral error and heading error
 			feedback, info = CarlaEnvUtils.error_baseline(self.vehicle, self.next_waypoint, info)
@@ -1099,7 +1103,7 @@ class CarlaEnv(gym.Env):
 
 			baseline_reward = round(baseline_reward, 5)
 
-			# reward for moving
+			# Reward for generally being able to move
 			goal_speed = self.config.target_speed_perc
 
 			normal = CarlaEnvUtils.speed_reward(self.vehicle, self.measurements, goal_speed, self.blocked, self.reduced)
@@ -1200,7 +1204,8 @@ class CarlaEnv(gym.Env):
 			info["ep_steps"] = float(self.episode_ticks) #doppelt
 			info["timeout"] = float(self.timeout)
 
-			# driving_score calculation, Careful here not exactly the same calulation as done in carla leaderboard
+			# Driving_score calculation,
+			# Careful not exactly the same calulation as done in carla leaderboard
 			driving_score = np.round(1 *
 				np.power(0.98, avg_dist) *
 				np.power(0.65, self.collision_cnt_env_log) *
@@ -1226,3 +1231,4 @@ class CarlaEnv(gym.Env):
 		# print("multi_reward", multi_reward)
 
 		return next_state, multi_reward, done, False, info
+

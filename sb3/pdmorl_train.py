@@ -97,6 +97,11 @@ class PDMORL_TD3(TD3):
 				],
 				dtype=np.float32
 			)
+			#  [[362.2 631.0 298.1 665.3]
+			#  [382.4 441.5 445.3 570.5]
+			#  [403.9 653.9 259.3 677.5]
+			#  [387.5 495.9 278.4 485.2]
+			#  [333.4 617.7 272.9 665.7]] 
 
 		# Path for saving/loading model or results
 		self.my_path = None
