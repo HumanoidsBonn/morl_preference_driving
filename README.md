@@ -1,5 +1,5 @@
 # MORL Preference Driving
-Code repository for **"Multi-Objective Reinforcement Learning for Adaptable Personalized Autonomous Driving"** – Surmann et al., ECMR 2025
+Code repository for **"Multi-Objective Reinforcement Learning for Adaptable Personalized Autonomous Driving"** by Surmann et al., ECMR 2025
 
 **Multi-Objective Reinforcement Learning for Adaptable Personalized Autonomous Driving**  
 by **Hendrik Surmann**  
@@ -86,7 +86,7 @@ Modify the **config file** to adjust key settings like:
 ## 📝 Citation
 
 ```bibtex
-@INPROCEEDINGS{Surmann2025MultiObjectiveRL,
+@INPROCEEDINGS{surmann2025ecmr,
   author={H. Surmann and J. de Heuvel and M. Bennewitz},
   title={Multi-Objective Reinforcement Learning for Adaptable Personalized Autonomous Driving},
   booktitle={Proc. European Conference on Mobile Robots (ECMR)},
